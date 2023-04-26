@@ -20,7 +20,7 @@ typedef struct Node Node;
 
 struct Node{
 
-    elem_t value;
+    elem_t value = 0;
     Node* next;
     Node* prev;
 } ;

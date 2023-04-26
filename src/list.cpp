@@ -224,9 +224,11 @@ void ListDestructor(List* list) {
     Node* curr_ptr = list->head;
     Node* next_node_ptr = nullptr;
     while(curr_ptr != nullptr) {
-
-        curr_ptr->value = nullptr;
-        next_node_ptr = curr_ptr->next;
+        if (curr_ptr) {
+            free((char*)curr_ptr->value);
+            curr_ptr->value = nullptr;
+        }
+        next_node_ptr   = curr_ptr->next;
         free (curr_ptr);
         curr_ptr = next_node_ptr;
     }

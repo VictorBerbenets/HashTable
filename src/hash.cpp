@@ -3,16 +3,17 @@
 
 //*********************************************************<Hash Table Functions>**********************************************************************
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
-HashTable CtorHashTable(size_t size) {
+HashTable CtorHashTable(size_t size, size_t (*HashFunction)(const char*)) {
 
     HashTable hash_table = {};
-    hash_table.arr = (List*) calloc(size, sizeof(List));
+    hash_table.arr  = (List*) calloc(size, sizeof(List));
+    hash_table.size = size;
     Validator(hash_table.arr == nullptr, "calloc couldn't get memory", exit(MEM_ALLOCATED_ERR));
 
     for (size_t list_number = 0; list_number < size; ++list_number) {
         hash_table.arr[list_number] = ListCreate();
     }
-    // hash_table.HashFunction;
+    hash_table.HashFunction = HashFunction;
     return hash_table;
 }
 
@@ -21,31 +22,37 @@ HashTable CtorHashTable(size_t size) {
 void FillHashTable(HashTable* hash_table, const char* data_text) {
 
     const char* buffer = ReadText(data_text);
+
     Validator(buffer == nullptr, "invalid pointer", return ;);
-    
-    size_t world_len  = 0;
+    char* save_buff_address = (char*)buffer;
+
+    size_t word_len  = 0;
     int readed_symbs  = 0;
     char* word_ptr    = 0;
 
     int is_not_empty = 1;
     while(is_not_empty) {
 
-        SkipSpaces(&buffer);
+        SkipTrash(&buffer);
+        readed_symbs = 0;
 
-        world_len = GetWorldLength(buffer);
-        word_ptr = (char*) calloc(world_len + 1, sizeof(char));
-        word_ptr[world_len] = '\0';
+        word_len = GetWorldLength(buffer);
+
+        word_ptr = (char*) calloc(word_len + 1, sizeof(char));
+        word_ptr[word_len] = '\0';
 
         sscanf(buffer, "%[a-zA-Z]%n", word_ptr, &readed_symbs);
         buffer += readed_symbs;
+        fprintf(stderr, "word   = <%s>\n", word_ptr);
 
         PushWordToHashTable(hash_table, word_ptr);
 
-        if (!readed_symbs) {
+        if (!readed_symbs || *buffer == '\0') {
             is_not_empty = 0;
         }
     }
 
+    free(save_buff_address);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -80,7 +87,47 @@ const char* ReadText(const char* file_name) {
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
 
 void PushWordToHashTable(HashTable* hash_table, elem_t word) {
-    
+    Validator(word == nullptr, "invalid word pointer", return ;);
+
+    if (!IsNewWord(hash_table, word)) {
+
+        free((char*)word);
+        return ;
+    }
+
+    size_t hash = hash_table->HashFunction(word) % hash_table->size;
+    ListInsertHead(&(hash_table->arr[hash]), word);
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+elem_t FindHashData(HashTable* hash_table, elem_t word) {
+    size_t key     = hash_table->HashFunction(word);
+    size_t cell_id = key % hash_table->size;
+
+    Node* node_ptr = hash_table->arr[cell_id].head;
+    for (int elem_number = 0; elem_number < hash_table->arr[cell_id].size; elem_number++, node_ptr = node_ptr->next) {
+        if (node_ptr && !strcmp(word, node_ptr->value)) {
+            return word;
+        }
+    }
+    return nullptr;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+int IsNewWord(HashTable* hash_table, const char* word) {
+
+    size_t key     = hash_table->HashFunction(word);
+    size_t cell_id = key % hash_table->size; 
+    Node* node_ptr = hash_table->arr[cell_id].head;
+
+    for (int elem_number = 0; elem_number < hash_table->arr[cell_id].size; elem_number++, node_ptr = node_ptr->next) {
+        if (node_ptr && !strcmp(word, node_ptr->value)) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -92,16 +139,19 @@ void DtorHashTable(HashTable* hash_table) {
     }
 
     for (size_t list_number = 0; list_number < hash_table->size; ++list_number) {
+
         ListDestructor(&hash_table->arr[list_number]);
     }
+
+    free(hash_table->arr);
     hash_table->size = 0;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
 
-void SkipSpaces(const char** text) {
+void SkipTrash(const char** text) {
     Validator(*text == nullptr, "invalid string pointer", return ;);
-    while(isspace(**text)) {
+    while(**text != '\0' && !isalpha(**text)) {
         (*text)++;
     }
 }
