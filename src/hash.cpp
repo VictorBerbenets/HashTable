@@ -14,7 +14,6 @@ HashTable CtorHashTable(size_t size, size_t (*HashFunction)(const char*)) {
         hash_table.arr[list_number] = ListCreate();
     }
     hash_table.HashFunction = HashFunction;
-    // hash_table.HashFunction = HashFunction;
     return hash_table;
 }
 
@@ -39,22 +38,25 @@ void FillHashTable(HashTable* hash_table, const char* data_text) {
 
         word_len = GetWorldLength(buffer);
         if (word_len) {
-            word_ptr = (char*) calloc(word_len + 1, sizeof(char));
-            word_ptr[word_len] = '\0';
-
+            word_ptr = CreateString(word_len);
             sscanf(buffer, "%[a-zA-Z]%n", word_ptr, &readed_symbs);
             buffer += readed_symbs;
-            // fprintf(stderr, "word   = <%s>\n", word_ptr);
 
             PushWordToHashTable(hash_table, word_ptr);
         }
-
         if (!readed_symbs || *buffer == '\0') {
             is_not_empty = 0;
         }
     }
-
     free(save_buff_address);
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+char* CreateString(int word_len) {
+    char* word_ptr = (char*) calloc(word_len + 1, sizeof(char));
+    word_ptr[word_len] = '\0';
+    return word_ptr;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//

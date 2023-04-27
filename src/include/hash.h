@@ -16,12 +16,10 @@ size_t (*HashFunction)( const char* );
 
 } HashTable;
 
-// size_t HashFunction( const char* data_string);
-
-
 //------------------------------------------------------------------------//
 HashTable CtorHashTable(size_t size, size_t (*HashFunction)(const char*));
 const char* ReadText(const char* file_name);
+char* CreateString(int word_len);
 //------------------------------------------------------------------------//
 
 //------------------------------------------------------------------------//
