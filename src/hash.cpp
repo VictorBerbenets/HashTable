@@ -14,6 +14,7 @@ HashTable CtorHashTable(size_t size, size_t (*HashFunction)(const char*)) {
         hash_table.arr[list_number] = ListCreate();
     }
     hash_table.HashFunction = HashFunction;
+    // hash_table.HashFunction = HashFunction;
     return hash_table;
 }
 
@@ -37,15 +38,16 @@ void FillHashTable(HashTable* hash_table, const char* data_text) {
         readed_symbs = 0;
 
         word_len = GetWorldLength(buffer);
+        if (word_len) {
+            word_ptr = (char*) calloc(word_len + 1, sizeof(char));
+            word_ptr[word_len] = '\0';
 
-        word_ptr = (char*) calloc(word_len + 1, sizeof(char));
-        word_ptr[word_len] = '\0';
+            sscanf(buffer, "%[a-zA-Z]%n", word_ptr, &readed_symbs);
+            buffer += readed_symbs;
+            // fprintf(stderr, "word   = <%s>\n", word_ptr);
 
-        sscanf(buffer, "%[a-zA-Z]%n", word_ptr, &readed_symbs);
-        buffer += readed_symbs;
-        fprintf(stderr, "word   = <%s>\n", word_ptr);
-
-        PushWordToHashTable(hash_table, word_ptr);
+            PushWordToHashTable(hash_table, word_ptr);
+        }
 
         if (!readed_symbs || *buffer == '\0') {
             is_not_empty = 0;
@@ -88,9 +90,8 @@ const char* ReadText(const char* file_name) {
 
 void PushWordToHashTable(HashTable* hash_table, elem_t word) {
     Validator(word == nullptr, "invalid word pointer", return ;);
-
-    if (!IsNewWord(hash_table, word)) {
-
+    
+    if (FindHashData(hash_table, word)) {
         free((char*)word);
         return ;
     }
@@ -100,34 +101,17 @@ void PushWordToHashTable(HashTable* hash_table, elem_t word) {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
-elem_t FindHashData(HashTable* hash_table, elem_t word) {
+int FindHashData(HashTable* hash_table, elem_t word) {
     size_t key     = hash_table->HashFunction(word);
     size_t cell_id = key % hash_table->size;
 
     Node* node_ptr = hash_table->arr[cell_id].head;
     for (int elem_number = 0; elem_number < hash_table->arr[cell_id].size; elem_number++, node_ptr = node_ptr->next) {
         if (node_ptr && !strcmp(word, node_ptr->value)) {
-            return word;
+            return 1;
         }
     }
-    return nullptr;
-}
-//----------------------------------------------------------------------------------------------------------------------------------------------------//
-
-
-int IsNewWord(HashTable* hash_table, const char* word) {
-
-    size_t key     = hash_table->HashFunction(word);
-    size_t cell_id = key % hash_table->size; 
-    Node* node_ptr = hash_table->arr[cell_id].head;
-
-    for (int elem_number = 0; elem_number < hash_table->arr[cell_id].size; elem_number++, node_ptr = node_ptr->next) {
-        if (node_ptr && !strcmp(word, node_ptr->value)) {
-            return 0;
-        }
-    }
-
-    return 1;
+    return 0;
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -155,4 +139,51 @@ void SkipTrash(const char** text) {
         (*text)++;
     }
 }
+
 //----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+void DeleteHashElement(HashTable* hash_table, const char* word) {
+    size_t key     = hash_table->HashFunction(word);
+    size_t cell_id = key % hash_table->size;
+
+    Node* node_ptr = hash_table->arr[cell_id].head;
+    for (int elem_number = 0; elem_number < hash_table->arr[cell_id].size; elem_number++, node_ptr = node_ptr->next) {
+        if (node_ptr && !strcmp(word, node_ptr->value)) {
+            if (node_ptr->value) {
+                free((char*)node_ptr->value);
+            }
+            DeleteNode(&hash_table->arr[cell_id], elem_number + 1);
+            return ;
+        }
+    }
+
+    printf("Element to delete was not fined: %s\n", word);
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+void HashTableDump(HashTable* hash_table, int line, const char* func_name, const char* file_name) {
+    printf("\n*--------------------------------------------------------------------------------------------------*\n");
+    printf("*-----------------------------------Hash Table Dump------------------------------------------------*\n");
+    printf("***Hash table dump was called from:%s:%s:%d ***\n", file_name, func_name, line);
+    printf("***Size: '%zd' ***\n", hash_table->size);
+    printf("***DATA:\n\n");
+
+    Node* list_ptr = nullptr; 
+    for (size_t list_id = 0; list_id < hash_table->size; ++list_id) {
+        list_ptr = hash_table->arr[list_id].head;
+        for (size_t list_element = 0; list_element < (size_t)hash_table->arr[list_id].size; list_element++, list_ptr = list_ptr->next) {
+            if (list_ptr->value) {
+                printf("***[%zd][%zd] = '%s' ***\n", list_id, list_element, list_ptr->value);
+            }
+        }
+    }
+    printf("*----------------------------------------End Dump--------------------------------------------------*\n");
+    printf("*--------------------------------------------------------------------------------------------------*\n\n");
+
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+
+//перестройка хэш таблицу

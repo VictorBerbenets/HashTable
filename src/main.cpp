@@ -7,10 +7,12 @@ int main(int argc, const char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    HashTable hash_table = CtorHashTable(1001, HashFunction);
+    HashTable hash_table = CtorHashTable(1001, AsciiSumHash);
 
     FillHashTable(&hash_table, argv[1]);
-    printf("data = <%s>\n", FindHashData(&hash_table, "he"));
+
+    DeleteHashElement(&hash_table, "he");
+    HashDump(hash_table);
     DtorHashTable(&hash_table);
     return 0;
 }

@@ -24,29 +24,30 @@ HashTable CtorHashTable(size_t size, size_t (*HashFunction)(const char*));
 const char* ReadText(const char* file_name);
 //------------------------------------------------------------------------//
 
-
 //------------------------------------------------------------------------//
-void DtorHashTable(HashTable* hash_table);
-void PushWordToHashTable(HashTable* hash_table, elem_t word);
+#define HashDump(hash_table) HashTableDump(&hash_table, __LINE__, __PRETTY_FUNCTION__, __FILE__)
+
+void HashTableDump(HashTable* hash_table, int line, const char* func_name, const char* file_name);
 void FillHashTable(HashTable* hash_table, const char* data_text);
+void DeleteHashElement(HashTable* hash_table, const char* word);
+void PushWordToHashTable(HashTable* hash_table, elem_t word);
+void DtorHashTable(HashTable* hash_table);
 void SkipTrash(const char** text);
 //------------------------------------------------------------------------//
 
 //------------------------------------------------------------------------//
-elem_t FindHashData(HashTable* hash_table, elem_t word);
-//------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------//
 size_t GetWorldLength(const char* buffer);
-size_t HashFunction(const char* word);
+// --- hash funcs: ---
+size_t WordLengthHash(const char* word);
+size_t AsciiSumHash(elem_t word);
+
 //------------------------------------------------------------------------//
 
+//------------------------------------------------------------------------//
+int FindHashData(HashTable* hash_table, elem_t word);
+//------------------------------------------------------------------------//
 
 //------------------------------------------------------------------------//
-int IsNewWord(HashTable* hash_table, const char* word);
-//------------------------------------------------------------------------//
-
-
 long GetFileSize(const char *file);
 //------------------------------------------------------------------------//
 
